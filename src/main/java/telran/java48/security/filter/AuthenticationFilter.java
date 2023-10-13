@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.security.Principal;
 import java.util.Base64;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -23,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 import telran.java48.accounting.dao.UserAccountRepository;
 import telran.java48.accounting.model.UserAccount;
 import telran.java48.security.context.SecurityContext;
+import telran.java48.security.model.Role;
 import telran.java48.security.model.User;
 
 @Component
@@ -49,7 +51,11 @@ public class AuthenticationFilter implements Filter {
 					if (!BCrypt.checkpw(credentials[1], userAccount.getPassword())) {
 						throw new RuntimeException();
 					}
-					user = new User(userAccount.getLogin(), userAccount.getRoles());
+					Set<Role> roles = userAccount.getRoles()
+							.stream()
+							.map(r -> Role.valueOf(r.toUpperCase()))
+							.collect(Collectors.toSet());
+					user = new User(userAccount.getLogin(), roles);
 					securityContext.addUserSession(sessionId, user);
 				} catch (Exception e) {
 					response.sendError(401);
@@ -77,9 +83,9 @@ public class AuthenticationFilter implements Filter {
 	
 	private class WrappedRequest extends HttpServletRequestWrapper {
 		String login;
-		Set<String> roles;
+		Set<Role> roles;
 
-		public WrappedRequest(HttpServletRequest request, String login, Set<String> roles) {
+		public WrappedRequest(HttpServletRequest request, String login, Set<Role> roles) {
 			super(request);
 			this.login = login;
 			this.roles = roles;

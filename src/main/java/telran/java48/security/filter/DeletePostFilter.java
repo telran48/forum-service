@@ -17,6 +17,7 @@ import org.springframework.stereotype.Component;
 import lombok.RequiredArgsConstructor;
 import telran.java48.post.dao.PostRepository;
 import telran.java48.post.model.Post;
+import telran.java48.security.model.Role;
 import telran.java48.security.model.User;
 
 @Component
@@ -41,7 +42,7 @@ public class DeletePostFilter implements Filter {
 				return;
 			}
 			if (!(user.getName().equals(post.getAuthor()) 
-					|| user.getRoles().contains("MODERATOR"))) {
+					|| user.getRoles().contains(Role.MODERATOR))) {
 				response.sendError(403);
 				return;
 			}
