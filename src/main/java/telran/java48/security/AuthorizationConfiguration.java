@@ -1,5 +1,6 @@
 package telran.java48.security;
 
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -9,19 +10,24 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.expression.WebExpressionAuthorizationManager;
-import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
+
+import lombok.RequiredArgsConstructor;
 
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class AuthorizationConfiguration {
+	
+	final ExpiredPasswordFilter expiredPasswordFilter;
 
 	@Bean
 	public SecurityFilterChain configure(HttpSecurity http) throws Exception {
 		http.httpBasic(Customizer.withDefaults());
         http.csrf(csrf -> csrf.disable());
         http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
-        http.addFilterAfter(new ExpiredPasswordFilter(), BasicAuthenticationFilter.class);
+        http.addFilterBefore(expiredPasswordFilter, AuthorizationFilter.class);
 		http.authorizeHttpRequests(authorize -> authorize
 				.requestMatchers("/account/register", "/forum/posts/**")
 					.permitAll()
@@ -43,5 +49,12 @@ public class AuthorizationConfiguration {
 					.authenticated()
 		);
 		return http.build();
+	}
+	
+	@Bean
+	public FilterRegistrationBean<ExpiredPasswordFilter> expiredPasswordFilterRegistration(ExpiredPasswordFilter filter) {
+	    FilterRegistrationBean<ExpiredPasswordFilter> registration = new FilterRegistrationBean<>(filter);
+	    registration.setEnabled(false);
+	    return registration;
 	}
 }
